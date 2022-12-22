@@ -1,36 +1,49 @@
+import sys
 import pyzed.sl as sl
-def main() :
-    # Create a ZED camera object
+import networktables as fw
+import ogl_viewer.viewer as gl
+
+def main():
+    init = sl.InitParameters()
+
+    init.camera_resolution = sl.RESOLUTION.HD720 # Resolution 1280x720
+    init.camera_fps = 30
+    init.depth_mode = sl.DEPTH_MODE.QUALITY # Options: (ULTRA, QUALITY, PERFORMANCE)
+
+    # Use a right-handed Y-up coordinate system (The OpenGL one)
+    init.coordinate_system = sl.COORDINATE_SYSTEM.RIGHT_HANDED_Y_UP
+    init.coordinate_units = sl.UNIT.METER # Sets units in meters
+    init.depth_minimum_distance = 0.3 # Set the minimum depth perception distance to 30 cm
+    init.depth_maximum_distance = 20 # Set the maximum depth perception distance to 20 m
+
     zed = sl.Camera()
-    # Set initial parameters
-    init_params = sl.InitParameters()
-    init_params.camera_resolution = sl.RESOLUTION.HD720 # Use HD720 video mode (default fps: 60)
-    init_params.coordinate_units = sl.UNIT.METER # Set units in meters
-    # Open the camera
-    err = zed.open(init_params)
-    if (err != sl.ERROR_CODE.SUCCESS) :
-        print(repr(err))
-        exit(-1)
- 
-    # Enable video recording
-    record_params = RecordingParameters("myVideoFile.svo, sl.SVO_COMPRESSION_MODE.HD264)
-    err = zed.enable_recording(record_params)
-    if (err != sl.ERROR_CODE.SUCCESS) :
-        print(repr(err))
-        exit(-1)
- 
-    # Grab data during 500 frames
-    i = 0
-    while i < 500 :
-        # Grab a new frame
-        if zed.grab() == sl.ERROR_CODE.SUCCESS :
-            # Record the grabbed frame in the video file
-            i = i + 1
- 
-    zed.disable_recording()
-    print("Video has been saved ...")
+    status = zed.open(init)
+
+    # tracking_parameters = sl.PositionalTrackingParameters()
+    # err = zed.enable_tracking(tracking_parameters)
+
+    if (status != sl.ERROR_CODE.SUCCESS):
+        print(repr(status))
+        sys.exit(-1)
+
+    res = sl.Resolution()
+    res.width = 720
+    res.height = 404
+
+    camera_model = zed.get_camera_information().camera_model
+    # Create OpenGL viewer
+    viewer = gl.GLViewer()
+    viewer.init(len(sys.argv), sys.argv, camera_model, res)
+
+    point_cloud = sl.Mat(res.width, res.height, sl.MAT_TYPE.F32_C4, sl.MEM.CPU)
+
+    while viewer.is_available():
+        if zed.grab() == sl.ERROR_CODE.SUCCESS:
+            zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA,sl.MEM.CPU, res)
+            viewer.updateData(point_cloud)
+
+    viewer.exit()
     zed.close()
-    return 0
- 
-if __name__ == "__main__" :
+
+if __name__ == '__main__':
     main()
