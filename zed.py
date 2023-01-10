@@ -20,7 +20,7 @@ def main():
     status = zed.open(init)
 
     # tracking_parameters = sl.PositionalTrackingParameters()
-    # err = zed.enable_tracking(tracking_parameters)
+    # status = zed.enable_tracking(tracking_parameters)
 
     if (status != sl.ERROR_CODE.SUCCESS):
         print(repr(status))
