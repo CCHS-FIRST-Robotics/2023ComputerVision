@@ -1,3 +1,10 @@
+import sys
+import cv2
+import time
+import copy
+import math
+import apriltag
+import numpy as np
 import pyzed.sl as sl
 
 init = sl.InitParameters()
@@ -14,16 +21,15 @@ init.depth_maximum_distance = 20 # Set the maximum depth perception distance to 
 
 zed = sl.Camera()
 status = zed.open(init)
-
-tracking_init = sl.PositionalTrackingParameters()
-zed.enable_positional_tracking(tracking_init)
+if (status != sl.ERROR_CODE.SUCCESS):
+    sys.exit(-1)
 
 runtime = sl.RuntimeParameters()
-camera_pose = sl.Pose()
 
-translation = sl.Translation()
-transform = sl.Transform()
+runtime.confidence_threshold = 100
+runtime.textureness_confidence_threshold = 100
 
+image_zed = sl.Mat()
 depth_map = sl.Mat()
 point_cloud = sl.Mat()
 
@@ -31,9 +37,18 @@ resolution = zed.get_camera_informations().camera_resolution
 x = int(resolution.width / 2) # Center coordinates
 y = int(resolution.height / 2)
 
-def getData():
-    if zed.grab() == sl.ERROR_CODE.SUCCESS:
-        zed.retreve_measure(depth_map, sl.MEASURE.DEPTH, sl.MEM.CPU)
+tag_detector = apriltag.Detector(apriltag.DetectorOptions(families="tag36h11"))
 
-        depth = depth_map.get_value(x, y, sl.MEM.CPU)
+def get_april_tag():
+    if zed.grab() == sl.ERROR_CODE.SUCCESS:
+        zed.retrieve_image(image_zed, sl.VIEW.LEFT)
+        zed.retrieve_measure(depth_map, sl.MEASURE.DEPTH)
+        zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA)
+
+        image = cv2.cvtColor(image_zed.get_data(), cv2.COLOR_BGR2GRAY)
+        tags = tag_detector.detect(image)
+
+        for tag in tags:
+            depth = depth_map.get_value(*tag.center)
+
         return depth

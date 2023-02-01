@@ -9,7 +9,7 @@ nw.initialize(server="X.X.X.X") # Fill in later
 state = nw.getTable("state")
 
 def main():
-    print(zed.getData())
+    print(zed.get_april_tag())
 
 def send_state(x_pos, y_pos, heading):
     state.putNumber("x_pos", x_pos)
