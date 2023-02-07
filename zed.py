@@ -10,7 +10,7 @@ import pyzed.sl as sl
 init = sl.InitParameters()
 
 init.camera_resolution = sl.RESOLUTION.HD720 # Resolution 1280x720
-init.camera_fps = 15
+init.camera_fps = 20
 init.depth_mode = sl.DEPTH_MODE.PERFORMANCE # Options: (ULTRA, QUALITY, PERFORMANCE)
 
 # Use a right-handed Y-up coordinate system (The OpenGL one)
@@ -33,11 +33,11 @@ image_zed = sl.Mat()
 depth_map = sl.Mat()
 point_cloud = sl.Mat()
 
-resolution = zed.get_camera_informations().camera_resolution
+resolution = zed.get_camera_information().camera_resolution
 x = int(resolution.width / 2) # Center coordinates
 y = int(resolution.height / 2)
 
-tag_detector = apriltag.Detector(apriltag.DetectorOptions(families="tag36h11"))
+tag_detector = apriltag.Detector(apriltag.DetectorOptions(families="tag36h11", nthreads=4))
 
 def get_april_tag():
     if zed.grab() == sl.ERROR_CODE.SUCCESS:
@@ -48,7 +48,17 @@ def get_april_tag():
         image = cv2.cvtColor(image_zed.get_data(), cv2.COLOR_BGR2GRAY)
         tags = tag_detector.detect(image)
 
-        for tag in tags:
-            depth = depth_map.get_value(*tag.center)
+        depths = []
 
-        return depth
+        for tag in tags:
+            depths.append(depth_map.get_value(tag.center))
+
+        nearest_tag = None
+
+        if not depths:
+            lowest_val = min(depths)
+            nearest_tag = depths.index(lowest_val)
+        else:
+            return None
+        
+        return point_cloud.get_value(nearest_tag.center)

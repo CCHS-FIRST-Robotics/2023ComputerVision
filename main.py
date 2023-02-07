@@ -1,20 +1,21 @@
-import tag
 import zed
 from networktables import NetworkTables as nw
 
 
 # Script runs on start up and handles networktables between RoboRIO and Jetson
 
-nw.initialize(server="X.X.X.X") # Fill in later
-state = nw.getTable("state")
+nw.initialize(server="10.32.5.2") # Fill in later
+tags = nw.getTable("tags")
 
 def main():
-    print(zed.get_april_tag())
+    april_tag = zed.get_april_tag()
+    send_april_tag(april_tag[0], april_tag[1], april_tag[2])
 
-def send_state(x_pos, y_pos, heading):
-    state.putNumber("x_pos", x_pos)
-    state.putNumber("y_pos", y_pos)
-    state.putNumber("heading", heading)
+def send_april_tag(x, y, z):
+    tags.putNumber("x", x)
+    tags.putNumber("y", y)
+    tags.putNumber("z", z)
+
 
 if __name__ == '__main__':
     main()
