@@ -51,7 +51,7 @@ def get_april_tag():
         depths = []
 
         for tag in tags:
-            depths.append(depth_map.get_value(tag.center))
+            depths.append(depth_map.get_value(*tag.center))
 
         nearest_tag = None
 

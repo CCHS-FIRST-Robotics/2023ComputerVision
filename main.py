@@ -9,7 +9,7 @@ tags = nw.getTable("tags")
 
 def main():
     april_tag = zed.get_april_tag()
-    send_april_tag(april_tag[0], april_tag[1], april_tag[2])
+    send_april_tag(*april_tag)
 
 def send_april_tag(x, y, z):
     tags.putNumber("x", x)
