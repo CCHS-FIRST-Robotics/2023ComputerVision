@@ -55,9 +55,9 @@ def get_april_tag():
 
         nearest_tag = None
 
-        if not depths:
+        if depths:
             lowest_val = min(depths)
-            nearest_tag = depths.index(lowest_val)
+            nearest_tag = tags[depths.index(lowest_val)]
         else:
             return None
         
