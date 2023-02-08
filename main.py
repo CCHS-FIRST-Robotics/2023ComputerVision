@@ -12,7 +12,7 @@ def main():
 
         # Send vals over networktables if apriltag exists
         if april_tag is not None:
-            send_april_tag(*april_tag)
+            send_april_tag(april_tag[0], april_tag[1], april_tag[2])
 
 def send_april_tag(x, y, z):
     tags.putNumber("x", x)

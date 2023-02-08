@@ -63,4 +63,6 @@ def get_april_tag():
         else:
             return None # Return None if there are no AprilTags detected
         
-        return point_cloud.get_value(nearest_tag.center) # Return point cloud values of nearest AprilTag
+        err, point_cloud_value = point_cloud.get_value(*nearest_tag.center) # Return point cloud values of nearest AprilTag
+        
+        return point_cloud_value
