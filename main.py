@@ -7,11 +7,12 @@ nw.initialize(server="10.32.5.2") # IP Address of RoboRIO
 tags = nw.getTable("tags") # AprilTag table
 
 def main():
-    april_tag = zed.get_april_tag() # Publish AprilTag xyz vals
+    while True:
+        april_tag = zed.get_april_tag() # Publish AprilTag xyz vals
 
-    # Send vals over networktables if apriltag exists
-    if april_tag is not None:
-        send_april_tag(*april_tag)
+        # Send vals over networktables if apriltag exists
+        if april_tag is not None:
+            send_april_tag(*april_tag)
 
 def send_april_tag(x, y, z):
     tags.putNumber("x", x)
