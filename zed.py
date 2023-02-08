@@ -41,24 +41,26 @@ tag_detector = apriltag.Detector(apriltag.DetectorOptions(families="tag36h11", n
 
 def get_april_tag():
     if zed.grab() == sl.ERROR_CODE.SUCCESS:
-        zed.retrieve_image(image_zed, sl.VIEW.LEFT)
-        zed.retrieve_measure(depth_map, sl.MEASURE.DEPTH)
-        zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA)
+        zed.retrieve_image(image_zed, sl.VIEW.LEFT) # Get image from left camera
+        zed.retrieve_measure(depth_map, sl.MEASURE.DEPTH) # Get depth map
+        zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA) # Get point cloud array
 
-        image = cv2.cvtColor(image_zed.get_data(), cv2.COLOR_BGR2GRAY)
-        tags = tag_detector.detect(image)
+        image = cv2.cvtColor(image_zed.get_data(), cv2.COLOR_BGR2GRAY) # Convert image to B&W for AprilTag detection
+        tags = tag_detector.detect(image) # Detect tags
 
         depths = []
 
+        # Finds the depth of each AprilTag in the image
         for tag in tags:
             depths.append(depth_map.get_value(*tag.center))
 
         nearest_tag = None
 
+        # Finds the AprilTag closest to the camera
         if depths:
             lowest_val = min(depths)
             nearest_tag = tags[depths.index(lowest_val)]
         else:
-            return None
+            return None # Return None if there are no AprilTags detected
         
-        return point_cloud.get_value(nearest_tag.center)
+        return point_cloud.get_value(nearest_tag.center) # Return point cloud values of nearest AprilTag
