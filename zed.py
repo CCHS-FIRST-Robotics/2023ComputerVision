@@ -79,5 +79,5 @@ def get_april_tag():
             tag_id.append(tag.tag_id)
 
             num_tags.append(len(tags))
-            print("Average: " + sum(num_tags) / len(num_tags))
+            print("Average: ", sum(num_tags) / len(num_tags))
 
