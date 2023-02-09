@@ -75,7 +75,6 @@ def get_april_tag():
             cv2.destroyAllWindows()
             sys.exit()
             
-
         cv2.imshow('AprilTags', debug_image)
 
         # Finds the depth of each AprilTag in the image
@@ -89,10 +88,13 @@ def get_april_tag():
                 depth.append(depth_map.get_value(*tag.center)[1])
                 tag_id.append(tag.tag_id)
 
-                print("-------")
+            print("-------")
+            print(tag.pose_err)
+
+            if tag.tag_id == 3:
+                print("YO MR. WHITE")
                 print(tag.pose_R)
                 print(tag.pose_t)
-                print(tag.pose_err)
                 print(tag.tag_id)
 
         return point_cloud_x, point_cloud_y, point_cloud_z, depth, tag_id
