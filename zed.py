@@ -1,11 +1,8 @@
 import sys
 import cv2
-import time
-import copy
-import math
-import apriltag
 import numpy as np
 import pyzed.sl as sl
+from pupil_apriltags import Detector
 
 init = sl.InitParameters()
 
@@ -37,7 +34,13 @@ resolution = zed.get_camera_information().camera_resolution
 x = int(resolution.width / 2) # Center coordinates
 y = int(resolution.height / 2)
 
-tag_detector = apriltag.Detector(apriltag.DetectorOptions(families="tag36h11", nthreads=4))
+tag_detector = Detector(families="tag36h11", 
+                        nthreads=4,
+                        quad_decimate=2.0,
+                        quad_sigma=0.8,
+                        refine_edges=1,
+                        decode_sharpening=0.25,
+                        debug=0)
 
 def get_april_tag():
     if zed.grab() == sl.ERROR_CODE.SUCCESS:
@@ -48,19 +51,20 @@ def get_april_tag():
         image = cv2.cvtColor(image_zed.get_data(), cv2.COLOR_BGR2GRAY) # Convert image to B&W for AprilTag detection
         tags = tag_detector.detect(image) # Detect tags
 
-        depths = []
+        point_cloud_x = []
+        point_cloud_y = []
+        point_cloud_z = []
+        depth = []
+        tag_id = []
 
         # Finds the depth of each AprilTag in the image
         for tag in tags:
-            depths.append(depth_map.get_value(*tag.center))
+            err, point_cloud_value = point_cloud.get_value(*tag.center)
 
-        nearest_tag = None
+            point_cloud_x.append(point_cloud_value[0])
+            point_cloud_y.append(point_cloud_value[1])
+            point_cloud_z.append(point_cloud_value[2])
+            depth.append(depth_map.get_value(*tag.center))
+            tag_id.append(tag.tag_id)
 
-        # Finds the AprilTag closest to the camera
-        if depths:
-            lowest_val = min(depths)
-            nearest_tag = tags[depths.index(lowest_val)]
-        else:
-            return None # Return None if there are no AprilTags detected
-        
-        return point_cloud.get_value(nearest_tag.center) # Return point cloud values of nearest AprilTag
+        return point_cloud_x, point_cloud_y, point_cloud_z, depth, tag_id

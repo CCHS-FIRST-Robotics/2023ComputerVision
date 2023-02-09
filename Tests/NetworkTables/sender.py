@@ -1,11 +1,14 @@
 from networktables import NetworkTables
 import time
 
-NetworkTables.get
+
+NetworkTables.initialize()
+
 numbers = NetworkTables.getTable("numbers")
 
-while True:
-    words = input("Enter string: ")
-    numbers.putString("foo", words)
-    NetworkTables.flush()
+
+my_coords = [0.5, 0.5, 2.2]
+numbers.putNumberArray("foo", my_coords)
+NetworkTables.flush()
+time.sleep(1)
     
