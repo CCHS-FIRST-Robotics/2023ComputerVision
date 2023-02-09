@@ -49,8 +49,10 @@ tag_detector = Detector(families="tag16h5",
                         decode_sharpening=0.25,
                         debug=0)
 
+num_tags = []
+
 def get_april_tag():
-    print("NEW FRAME")
+    global num_tags
 
     if zed.grab() == sl.ERROR_CODE.SUCCESS:
         zed.retrieve_image(image_zed, sl.VIEW.LEFT) # Get image from left camera
@@ -65,8 +67,6 @@ def get_april_tag():
         point_cloud_z = []
         depth = []
         tag_id = []
-
-        print(len(tags))
             
         # Finds the depth of each AprilTag in the image
         for tag in tags:
@@ -78,4 +78,6 @@ def get_april_tag():
             depth.append(depth_map.get_value(*tag.center)[1])
             tag_id.append(tag.tag_id)
 
-        return point_cloud_x, point_cloud_y, point_cloud_z, depth, tag_id
+            num_tags.append(len(tags))
+            print("Average: " + sum(num_tags) / len(num_tags))
+
