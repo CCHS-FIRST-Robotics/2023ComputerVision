@@ -66,18 +66,19 @@ def get_april_tag():
         tag_id = []
 
         # Finds the depth of each AprilTag in the image
-        for tag in tags:
-            err, point_cloud_value = point_cloud.get_value(*tag.center)
+        if tags:
+            for tag in tags:
+                err, point_cloud_value = point_cloud.get_value(*tag.center)
 
-            point_cloud_x.append(point_cloud_value[0])
-            point_cloud_y.append(point_cloud_value[1])
-            point_cloud_z.append(point_cloud_value[2])
-            depth.append(depth_map.get_value(*tag.center))
-            tag_id.append(tag.tag_id)
+                point_cloud_x.append(point_cloud_value[0])
+                point_cloud_y.append(point_cloud_value[1])
+                point_cloud_z.append(point_cloud_value[2])
+                depth.append(depth_map.get_value(*tag.center))
+                tag_id.append(tag.tag_id)
 
-            print("-------")
-            print("Rotation: " + tag.pose_R)
-            print("Translation: " + tag.pose_t)
-            print("Error: " + tag.pose_err)
+                print("-------")
+                print(tag.pose_R)
+                print(tag.pose_t)
+                print(tag.pose_err)
 
         return point_cloud_x, point_cloud_y, point_cloud_z, depth, tag_id
