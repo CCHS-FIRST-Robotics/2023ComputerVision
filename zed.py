@@ -34,8 +34,14 @@ resolution = zed.get_camera_information().camera_resolution
 x = int(resolution.width / 2) # Center coordinates
 y = int(resolution.height / 2)
 
-tag_detector = Detector(families="tag36h11", 
-                        nthreads=4,
+fx = zed.get_camera_information().calibration_parameters.left_cam.fx
+fy = zed.get_camera_information().calibration_parameters.left_cam.fy
+cx = zed.get_camera_information().calibration_parameters.left_cam.cx
+cy = zed.get_camera_information().calibration_parameters.left_cam.cy
+camera_params = [fx, fy, cx, cy]
+
+tag_detector = Detector(families="tag16h5", 
+                        nthreads=2,
                         quad_decimate=2.0,
                         quad_sigma=0.8,
                         refine_edges=1,
@@ -43,13 +49,15 @@ tag_detector = Detector(families="tag36h11",
                         debug=0)
 
 def get_april_tag():
+    print("NEW FRAME")
+
     if zed.grab() == sl.ERROR_CODE.SUCCESS:
         zed.retrieve_image(image_zed, sl.VIEW.LEFT) # Get image from left camera
         zed.retrieve_measure(depth_map, sl.MEASURE.DEPTH) # Get depth map
         zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA) # Get point cloud array
 
         image = cv2.cvtColor(image_zed.get_data(), cv2.COLOR_BGR2GRAY) # Convert image to B&W for AprilTag detection
-        tags = tag_detector.detect(image) # Detect tags
+        tags = tag_detector.detect(image, True, camera_params, 0.1524) # Detect tags
 
         point_cloud_x = []
         point_cloud_y = []
@@ -66,5 +74,10 @@ def get_april_tag():
             point_cloud_z.append(point_cloud_value[2])
             depth.append(depth_map.get_value(*tag.center))
             tag_id.append(tag.tag_id)
+
+            print("-------")
+            print("Rotation: " + tag.pose_R)
+            print("Translation: " + tag.pose_t)
+            print("Error: " + tag.pose_err)
 
         return point_cloud_x, point_cloud_y, point_cloud_z, depth, tag_id
