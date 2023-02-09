@@ -72,7 +72,9 @@ def get_april_tag():
 
         key = cv2.waitKey(1)
         if key == 27:
-            exit()
+            cv2.destroyAllWindows()
+            sys.exit()
+            
 
         cv2.imshow('AprilTags', debug_image)
 
