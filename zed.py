@@ -91,6 +91,7 @@ def get_april_tag():
                 print(tag.pose_R)
                 print(tag.pose_t)
                 print(tag.pose_err)
+                print(tag.tag_id)
 
         return point_cloud_x, point_cloud_y, point_cloud_z, depth, tag_id
 
