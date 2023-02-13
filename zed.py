@@ -67,7 +67,19 @@ def get_april_tag():
         point_cloud_z = []
         depth = []
         tag_id = []
+
+        debug_image = copy.deepcopy(image_zed.get_data())
+
+        debug_image = draw_tags(debug_image, tags)
+
+        key = cv2.waitKey(1)
+        if key == 27:
+            cv2.destroyAllWindows()
+            sys.exit()
             
+
+        cv2.imshow('AprilTags', debug_image)
+
         # Finds the depth of each AprilTag in the image
         for tag in tags:
             err, point_cloud_value = point_cloud.get_value(*tag.center)
@@ -78,6 +90,11 @@ def get_april_tag():
             depth.append(depth_map.get_value(*tag.center)[1])
             tag_id.append(tag.tag_id)
 
-            num_tags.append(len(tags))
-            print("Average: ", sum(num_tags) / len(num_tags))
+            print("-------")
+            print(tag.pose_R)
+            print(tag.pose_t)
+            print(tag.pose_err)
+            print(tag.tag_id)
+
+        return point_cloud_x, point_cloud_y, point_cloud_z, depth, tag_id
 
