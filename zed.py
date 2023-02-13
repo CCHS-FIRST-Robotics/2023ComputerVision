@@ -70,17 +70,17 @@ def get_april_tag():
         depth = []
         tag_id = []
 
-        # debug_image = copy.deepcopy(image_zed.get_data())
+        debug_image = copy.deepcopy(image_zed.get_data())
 
-        # debug_image = draw_tags(debug_image, tags)
+        debug_image = draw_tags(debug_image, tags)
 
-        # key = cv2.waitKey(1)
-        # if key == 27:
-        #     cv2.destroyAllWindows()
-        #     sys.exit()
+        key = cv2.waitKey(1)
+        if key == 27:
+            cv2.destroyAllWindows()
+            sys.exit()
             
 
-        # cv2.imshow('AprilTags', debug_image)
+        cv2.imshow('AprilTags', debug_image)
 
         # Finds the depth of each AprilTag in the image
         for tag in tags:
