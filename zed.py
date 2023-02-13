@@ -49,10 +49,12 @@ tag_detector = Detector(families="tag16h5",
                         decode_sharpening=0.25,
                         debug=0)
 
-num_tags = []
+tag = None
+confidence = 999999
 
 def get_april_tag():
-    global num_tags
+    global tag
+    global confidence
 
     if zed.grab() == sl.ERROR_CODE.SUCCESS:
         zed.retrieve_image(image_zed, sl.VIEW.LEFT) # Get image from left camera
@@ -68,17 +70,17 @@ def get_april_tag():
         depth = []
         tag_id = []
 
-        debug_image = copy.deepcopy(image_zed.get_data())
+        # debug_image = copy.deepcopy(image_zed.get_data())
 
-        debug_image = draw_tags(debug_image, tags)
+        # debug_image = draw_tags(debug_image, tags)
 
-        key = cv2.waitKey(1)
-        if key == 27:
-            cv2.destroyAllWindows()
-            sys.exit()
+        # key = cv2.waitKey(1)
+        # if key == 27:
+        #     cv2.destroyAllWindows()
+        #     sys.exit()
             
 
-        cv2.imshow('AprilTags', debug_image)
+        # cv2.imshow('AprilTags', debug_image)
 
         # Finds the depth of each AprilTag in the image
         for tag in tags:
@@ -90,11 +92,10 @@ def get_april_tag():
             depth.append(depth_map.get_value(*tag.center)[1])
             tag_id.append(tag.tag_id)
 
-            print("-------")
-            print(tag.pose_R)
-            print(tag.pose_t)
-            print(tag.pose_err)
-            print(tag.tag_id)
+            if (tag.pose_err < confidence):
+                print("NEW LOW:")
+                print(tag.tag_id)
+                print(tag.pose_err)
 
         return point_cloud_x, point_cloud_y, point_cloud_z, depth, tag_id
 
