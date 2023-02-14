@@ -1,11 +1,8 @@
 import sys
 import cv2
-import time
-import copy
-import math
-import apriltag
 import numpy as np
 import pyzed.sl as sl
+import robotpy_apriltag as at
 
 init = sl.InitParameters()
 
@@ -37,7 +34,8 @@ resolution = zed.get_camera_information().camera_resolution
 x = int(resolution.width / 2) # Center coordinates
 y = int(resolution.height / 2)
 
-tag_detector = apriltag.Detector(apriltag.DetectorOptions(families="tag36h11", nthreads=4))
+tag_detector = at.AprilTagDetector()
+tag_detector.addFamily("tag16h5")
 
 def get_april_tag():
     if zed.grab() == sl.ERROR_CODE.SUCCESS:
@@ -50,19 +48,48 @@ def get_april_tag():
 
         depths = []
 
-        # Finds the depth of each AprilTag in the image
-        for tag in tags:
-            depths.append(depth_map.get_value(*tag.center))
+        point_cloud_x = []
+        point_cloud_y = []
+        point_cloud_z = []
+        depth = []
+        tag_id = []
 
-        nearest_tag = None
+        debug_image = draw_tags(image_zed.get_data(), tags)
 
-        # Finds the AprilTag closest to the camera
-        if depths:
-            lowest_val = min(depths)
-            nearest_tag = tags[depths.index(lowest_val)]
-        else:
-            return None # Return None if there are no AprilTags detected
+        key = cv2.waitKey(1)
+        if key == 27:
+            cv2.destroyAllWindows()
+            sys.exit()
+            
+        cv2.imshow('AprilTags', debug_image)
         
-        err, point_cloud_value = point_cloud.get_value(*nearest_tag.center) # Return point cloud values of nearest AprilTag
-        
-        return point_cloud_value
+        return point_cloud_x
+
+def draw_tags(image, tags):
+    for tag in tags:
+        tag_family = tag.tag_family
+        tag_id = tag.tag_id
+        center = tag.center
+        corners = tag.corners
+
+        center = (int(center[0]), int(center[1]))
+        corner_01 = (int(corners[0][0]), int(corners[0][1]))
+        corner_02 = (int(corners[1][0]), int(corners[1][1]))
+        corner_03 = (int(corners[2][0]), int(corners[2][1]))
+        corner_04 = (int(corners[3][0]), int(corners[3][1]))
+
+        cv2.circle(image, (center[0], center[1]), 5, (0, 0, 255), 2)
+
+        cv2.line(image, (corner_01[0], corner_01[1]),
+                (corner_02[0], corner_02[1]), (255, 0, 0), 2)
+        cv2.line(image, (corner_02[0], corner_02[1]),
+                (corner_03[0], corner_03[1]), (255, 0, 0), 2)
+        cv2.line(image, (corner_03[0], corner_03[1]),
+                (corner_04[0], corner_04[1]), (0, 255, 0), 2)
+        cv2.line(image, (corner_04[0], corner_04[1]),
+                (corner_01[0], corner_01[1]), (0, 255, 0), 2)
+
+        cv2.putText(image, str(tag_id), (center[0] - 10, center[1] - 10),
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2, cv2.LINE_AA)
+
+    return image
