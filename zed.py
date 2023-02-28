@@ -75,18 +75,18 @@ def draw_tags(image, tags):
         corner_03 = tag.getCorner(2)
         corner_04 = tag.getCorner(3)
 
-        cv2.circle(image, (center.x, center.y), 5, (0, 0, 255), 2)
+        cv2.circle(image, (int(center.x), int(center.y)), 5, (0, 0, 255), 2)
 
-        cv2.line(image, (corner_01.x, corner_01.y),
-                (corner_02.x, corner_02.y), (255, 0, 0), 2)
-        cv2.line(image, (corner_02.x, corner_02.y),
-                (corner_03.x, corner_03.y), (255, 0, 0), 2)
-        cv2.line(image, (corner_03.x, corner_03.y),
-                (corner_04.x, corner_04.y), (0, 255, 0), 2)
-        cv2.line(image, (corner_04.x, corner_04.y),
-                (corner_01.x, corner_01.y), (0, 255, 0), 2)
+        cv2.line(image, (int(corner_01.x), int(corner_01.y)),
+                (int(corner_02.x), int(corner_02.y)), (255, 0, 0), 2)
+        cv2.line(image, (int(corner_02.x), int(corner_02.y)),
+                (int(corner_03.x), int(corner_03.y)), (255, 0, 0), 2)
+        cv2.line(image, (int(corner_03.x), int(corner_03.y)),
+                (int(corner_04.x), int(corner_04.y)), (0, 255, 0), 2)
+        cv2.line(image, (int(corner_04.x), int(corner_04.y)),
+                (int(corner_01.x), int(corner_01.y)), (0, 255, 0), 2)
 
-        cv2.putText(image, str(tag_id), (center.x - 10, center.y - 10),
+        cv2.putText(image, str(tag_id), (int(center.x - 10), int(center.y - 10)),
                    cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2, cv2.LINE_AA)
 
     return image
