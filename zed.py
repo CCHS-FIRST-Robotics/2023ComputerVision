@@ -62,15 +62,15 @@ def get_april_tag():
             sys.exit()
             
         cv2.imshow('AprilTags', debug_image)
-        
+
         return point_cloud_x
 
 def draw_tags(image, tags):
     for tag in tags:
         tag_family = tag.tag_family
         tag_id = tag.tag_id
-        center = tag.center
-        corners = tag.corners
+        center = tag.getCenter()
+        corners = tag.getCorners()
 
         center = (int(center[0]), int(center[1]))
         corner_01 = (int(corners[0][0]), int(corners[0][1]))
