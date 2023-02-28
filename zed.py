@@ -67,16 +67,13 @@ def get_april_tag():
 
 def draw_tags(image, tags):
     for tag in tags:
-        tag_family = tag.tag_family
-        tag_id = tag.tag_id
+        tag_id = tag.getId()
         center = tag.getCenter()
-        corners = tag.getCorners()
 
-        center = (int(center[0]), int(center[1]))
-        corner_01 = (int(corners[0][0]), int(corners[0][1]))
-        corner_02 = (int(corners[1][0]), int(corners[1][1]))
-        corner_03 = (int(corners[2][0]), int(corners[2][1]))
-        corner_04 = (int(corners[3][0]), int(corners[3][1]))
+        corner_01 = tag.getCorners(0)
+        corner_02 = tag.getCorners(1)
+        corner_03 = tag.getCorners(2)
+        corner_04 = tag.getCorners(3)
 
         cv2.circle(image, (center[0], center[1]), 5, (0, 0, 255), 2)
 
