@@ -70,10 +70,10 @@ def draw_tags(image, tags):
         tag_id = tag.getId()
         center = tag.getCenter()
 
-        corner_01 = tag.getCorners(0)
-        corner_02 = tag.getCorners(1)
-        corner_03 = tag.getCorners(2)
-        corner_04 = tag.getCorners(3)
+        corner_01 = tag.getCorner(0)
+        corner_02 = tag.getCorner(1)
+        corner_03 = tag.getCorner(2)
+        corner_04 = tag.getCorner(3)
 
         cv2.circle(image, (center[0], center[1]), 5, (0, 0, 255), 2)
 
