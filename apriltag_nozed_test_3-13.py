@@ -28,38 +28,55 @@ def main():
 
         image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         detected_tags = detector.detect(image)
-        tags = []
+        detected_ids = [tag.getId() for tag in detected_tags]
 
-        # OLD METHOD OF FILTERING
-        # for tag in detected_tags:
-        #     dist = 0
-        #     matching = False
-        #     for prevTag in prevTags.values():
-        #         if tag.getId() == prevTag.getId():
-        #             matching = True
-        #             dist = get_dist_from_center(tag, prevTag)
-        #     if tag.getId() < 10 and dist < 20 and is_square(tag) and (matching or len(prevTags) == 0):
-        #         tags.append(tag)
-        #     distance = get_dist(tag.getCenter())
-
+        ### FILTER OUT BAD TAGS ###
+        # for each tag detected, increment its counter
         for tag in detected_tags:
             if tag.getId() not in counters:
                 counters[tag.getId()] = 0
             counters[tag.getId()] += 1
 
-        prevTags = {tag.getId(): tag for tag in detected_tags}
+        # If a tag id is not in the detected tags, reset its counter
         for tagId in counters.keys():
-            if tagId not in prevTags.keys():
+            if tagId not in detected_ids:
                 counters[tagId] = 0
 
+        tags = []
         for tag in detected_tags:
+            is_fake = False
+            # check if tag has a duplicate - 
+            # if so, determine which is the real one based on how far it was from previous frame
+            for tag2 in detected_tags:
+                if tag.getId() == tag2.getId():
+                    # If both tags suddenly showed up - discriminate based on how square they are
+                    if tag.getId() not in prevTags:
+                        if squareness(tag) > squareness(tag2):
+                            is_fake = True
+                        continue
+                    # Otherwise, discriminate based on distance from where the tag previously was
+                    tagId = tag.getId()
+                    if get_dist_from_center(prevTags[tagId], tag) > get_dist_from_center(prevTags[tagId], tag2):
+                        is_fake = True
+        
+            if is_fake:
+                continue
+            
+            # more than 5 frames of detection -> real tag
             if counters[tag.getId()] > 10:
                 tags.append(tag)
+
+        prevTags = {tag.getId(): tag for tag in tags}
+
+        if (len(tags) > 1):
+            print(tags[0].getId(), tags[1].getId())
 
         debug_image = copy.deepcopy(image)
 
         debug_image = draw_tags(debug_image, tags, elapsed_time)
         elapsed_time = time.time() - start_time
+
+        
 
         key = cv2.waitKey(1)
         if key == 27:
@@ -69,12 +86,11 @@ def main():
 
     cv2.destroyAllWindows()
 
-def is_square(tag):
+def squareness(tag):
     corners = [(int(tag.getCorner(i).x), int(tag.getCorner(i).y)) for i in range(4)]
     dist1 = math.sqrt((corners[0][0] - corners[1][0])**2 + (corners[0][1] - corners[1][1])**2)
     dist2 = math.sqrt((corners[1][0] - corners[2][0])**2 + (corners[1][1] - corners[2][1])**2)
-    if abs(dist1 - dist2) < 5:
-        return True
+    return abs(dist1 - dist2)
 
 def get_dist_from_center(tag1, tag2):
     center1 = tag1.getCenter()
