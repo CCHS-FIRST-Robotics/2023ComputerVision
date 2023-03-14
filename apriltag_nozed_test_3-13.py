@@ -13,10 +13,8 @@ def main():
     # Create a ZED camera
     vid = cv2.VideoCapture(0)
 
-
-
     # tag_detector = apriltag.Detector(apriltag.DetectorOptions(families="tag36h11"))
-    detector = robotpy_apriltag.Detector()
+    detector = robotpy_apriltag.AprilTagDetector()
     detector.addFamily('tag16h5')
 
     elapsed_time = 0
@@ -58,13 +56,13 @@ def draw_tags(
         tag_family = tag.getFamily()
         tag_id = tag.getId()
         center = tag.getCenter()
-        corners = tag.getCorners()
+        corners = [(int(tag.getCorner(i).x), int(tag.getCorner(i).y)) for i in range(4)]
 
         center = (int(center.x), int(center.y))
-        corner_01 = (int(corners[0][0]), int(corners[0][1]))
-        corner_02 = (int(corners[1][0]), int(corners[1][1]))
-        corner_03 = (int(corners[2][0]), int(corners[2][1]))
-        corner_04 = (int(corners[3][0]), int(corners[3][1]))
+        corner_01 = corners[0]
+        corner_02 = corners[1]
+        corner_03 = corners[2]
+        corner_04 = corners[3]
 
         cv2.circle(image, (center[0], center[1]), 5, (0, 0, 255), 2)
 
