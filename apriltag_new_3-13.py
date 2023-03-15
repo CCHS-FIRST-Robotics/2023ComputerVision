@@ -1,4 +1,6 @@
 import robotpy_apriltag
+from networktables import NetworkTables
+
 
 import cv2
 import time
@@ -10,6 +12,9 @@ import math
 
 
 def main():
+
+    NetworkTables.get
+    tags_table = NetworkTables.getTable("tags")
 
     # Create a ZED camera
     zed = sl.Camera()
@@ -110,8 +115,27 @@ def main():
         prev_tags = {tag.getId(): tag for tag in tags}
 
         ### PROCESS GOOD TAGS ###
-        for tag in tags:
+        # There are 8 tags on the field, each with an id from 1 to 8
+        for tag_id in range(1, 9):
+            # if the id isn't seen, put -1 to indicate unknown
+            if tag_id not in prev_tags.keys():
+                tags_table.putNumberArray(str(tag_id), [-1, -1, -1])
+                continue
+            
+            # otherwise, push the tag id and its displacement
             displacement = get_disp(tag.getCenter(), point_cloud)
+            tags_table.putNumberArray(str(tag.getId()), [displacement[0], displacement[1], displacement[2]])
+
+        # Give explicit key for closest tag
+        closest_tag = min(tags, key=lambda tag: get_dist(get_disp(tag.getCenter(), point_cloud)))
+        disp = get_disp(closest_tag.getCenter(), point_cloud)
+
+        tags_table.putNumber("id", closest_tag.getId())
+        tags_table.putNumber("x", disp[0])
+        tags_table.putNumber("y", disp[1])
+        tags_table.putNumber("z", disp[2])
+        tags_table.putNumber("dist", get_dist(disp))
+        NetworkTables.flush()
 
 
         ### VIEWING IN OPENCV WINDOW ###
@@ -148,9 +172,7 @@ def get_disp(point, point_cloud):
     # We measure the distance camera - object using Euclidean distance
     err, point_cloud_value = point_cloud.get_value(x, y)
 
-    distance = math.sqrt(point_cloud_value[0] * point_cloud_value[0] +
-                        point_cloud_value[1] * point_cloud_value[1] +
-                        point_cloud_value[2] * point_cloud_value[2])
+    distance = get_dist(point_cloud_value)
 
     #point_cloud_np = point_cloud.get_data()
     #point_cloud_np.dot(tr_np)
@@ -162,6 +184,11 @@ def get_disp(point, point_cloud):
     print("Distance to Camera at ({}, {}) (image center): {:1.3} m".format(x, y, distance), end="\r")
     sys.stdout.flush()
     return point_cloud_value
+
+def get_dist(point_cloud_value):
+    return math.sqrt(point_cloud_value[0] * point_cloud_value[0] +
+                        point_cloud_value[1] * point_cloud_value[1] +
+                        point_cloud_value[2] * point_cloud_value[2])
     
 
 def draw_tags(
