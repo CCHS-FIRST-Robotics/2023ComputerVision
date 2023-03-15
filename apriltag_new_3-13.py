@@ -1,7 +1,6 @@
 import robotpy_apriltag
 from networktables import NetworkTables
 
-
 import cv2
 import time
 import copy
@@ -127,15 +126,23 @@ def main():
             tags_table.putNumberArray(str(tag.getId()), [displacement[0], displacement[1], displacement[2]])
 
         # Give explicit key for closest tag
-        closest_tag = min(tags, key=lambda tag: get_dist(get_disp(tag.getCenter(), point_cloud)))
-        disp = get_disp(closest_tag.getCenter(), point_cloud)
+        if tags:
+            closest_tag = min(tags, key=lambda tag: get_dist(get_disp(tag.getCenter(), point_cloud)))
+            disp = get_disp(closest_tag.getCenter(), point_cloud)
 
-        tags_table.putNumber("id", closest_tag.getId())
-        tags_table.putNumber("x", disp[0])
-        tags_table.putNumber("y", disp[1])
-        tags_table.putNumber("z", disp[2])
-        tags_table.putNumber("dist", get_dist(disp))
-        NetworkTables.flush()
+            tags_table.putNumber("id", closest_tag.getId())
+            tags_table.putNumber("x", disp[0])
+            tags_table.putNumber("y", disp[1])
+            tags_table.putNumber("z", disp[2])
+            tags_table.putNumber("dist", get_dist(disp))
+            NetworkTables.flush()
+        else:
+            tags_table.putNumber("id", -1)
+            tags_table.putNumber("x", -1)
+            tags_table.putNumber("y", -1)
+            tags_table.putNumber("z", -1)
+            tags_table.putNumber("dist", -1)
+            NetworkTables.flush()
 
 
         ### VIEWING IN OPENCV WINDOW ###
