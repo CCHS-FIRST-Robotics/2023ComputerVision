@@ -12,7 +12,7 @@ import math
 
 def main():
 
-    NetworkTables.get
+    NetworkTables.initialize()
     tags_table = NetworkTables.getTable("tags")
 
     # Create a ZED camera
