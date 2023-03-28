@@ -11,8 +11,7 @@ import math
 
 
 def main():
-
-    NetworkTables.initialize()
+    NetworkTables.initialize(server="10.32.5.2")
     tags_table = NetworkTables.getTable("tags")
 
     # Create a ZED camera
@@ -27,6 +26,7 @@ def main():
     # Open the camera
     err = zed.open(init_params)
     if (err!=sl.ERROR_CODE.SUCCESS):
+        print(err)
         exit(-1)
 
 
@@ -38,11 +38,14 @@ def main():
     runtime_parameters.confidence_threshold = 100
     runtime_parameters.textureness_confidence_threshold = 100
 
-    
-
     image_zed = sl.Mat()
     depth = sl.Mat()
     point_cloud = sl.Mat()
+    
+    tracking_parameters = sl.PositionalTrackingParameters()
+    err = zed.enable_positional_tracking(tracking_parameters)
+    
+    zed_pose = sl.Pose()
 
     mirror_ref = sl.Transform()
     mirror_ref.set_translation(sl.Translation(2.75,4.0,0))
@@ -66,7 +69,31 @@ def main():
         zed.retrieve_image(image_zed, sl.VIEW.LEFT) # Get the left image
         zed.retrieve_measure(depth, sl.MEASURE.DEPTH) # Retrieve depth Mat. Depth is aligned on the left image
         zed.retrieve_measure(point_cloud, sl.MEASURE.XYZRGBA) # Retrieve colored point cloud. Point cloud is aligned on the left image.
-
+        
+        state = zed.get_position(zed_pose, sl.REFERENCE_FRAME.WORLD)
+        timestamp = zed_pose.timestamp
+        py_translation = sl.Translation()
+        tx = round(zed_pose.get_translation(py_translation).get()[0], 3)
+        tz = round(zed_pose.get_translation(py_translation).get()[2], 3)
+        py_orientation = sl.Orientation()
+        o_quat = np.round(zed_pose.get_orientation(py_orientation).get(), 3)
+        yaw = py_orientation.get_rotation_matrix().get_euler_angles(radian=False)[1]
+        tags_table.putNumberArray("zed_pose", [tx, tz, yaw])
+        tags_table.putNumber("zed_timestamp", timestamp.get_seconds())
+        
+        #print(type(zed_pose))
+        #covar = zed_pose.pose_covariance
+        #print()
+        #print(covar)
+        #print()
+        #py_translation = sl.Translation()
+        #tx = round(covar.get_translation(py_translation).get()[0], 3)
+        #tz = round(covar.get_translation(py_translation).get()[2], 3)
+        #py_orientation = sl.Orientation()
+        #o_quat = np.round(covar.get_orientation(py_orientation).get(), 3)
+        #yaw = py_orientation.get_rotation_matrix().get_euler_angles(radian=False)[1]
+        #tags_table.putNumberArray("pose_covar", [tx, tz, yaw])
+#
         image = cv2.cvtColor(image_zed.get_data(), cv2.COLOR_BGR2GRAY)
 
         detected_tags = detector.detect(image)
@@ -123,7 +150,7 @@ def main():
             
             # otherwise, push the tag id and its displacement
             displacement = get_disp(tag.getCenter(), point_cloud)
-            tags_table.putNumberArray(str(tag.getId()), [displacement[0], displacement[1], displacement[2]])
+            tags_table.putNumberArray(str(tag.getId()), [displacement[0], displacement[2], getAngle(tag)])
 
         # Give explicit key for closest tag
         if tags:
@@ -135,6 +162,7 @@ def main():
             tags_table.putNumber("y", disp[1])
             tags_table.putNumber("z", disp[2])
             tags_table.putNumber("dist", get_dist(disp))
+            tags_table.putNumber("tag_yaw", getAngle(tag))
             NetworkTables.flush()
         else:
             tags_table.putNumber("id", -1)
@@ -142,24 +170,28 @@ def main():
             tags_table.putNumber("y", -1)
             tags_table.putNumber("z", -1)
             tags_table.putNumber("dist", -1)
+            tags_table.putNumber("tag_yaw", -1)
             NetworkTables.flush()
 
 
         ### VIEWING IN OPENCV WINDOW ###
-        debug_image = copy.deepcopy(image_zed.get_data())
+        #debug_image = image_zed.get_data()
 
-        debug_image = draw_tags(debug_image, tags, elapsed_time)
+        #debug_image = draw_tags(debug_image, tags, elapsed_time)
         elapsed_time = time.time() - start_time
 
         key = cv2.waitKey(1)
         if key == 27:
             break
 
-        cv2.imshow('AprilTags', debug_image)
+        #cv2.imshow('AprilTags', debug_image)
 
     cv2.destroyAllWindows()
     zed.close()
 
+def getAngle(tag):
+    homo = tag.getHomographyMatrix()
+    return -np.arctan2(homo[0][1], homo[0][0]) * 180/np.pi
 def squareness(tag):
     corners = [(int(tag.getCorner(i).x), int(tag.getCorner(i).y)) for i in range(4)]
     dist1 = math.sqrt((corners[0][0] - corners[1][0])**2 + (corners[0][1] - corners[1][1])**2)
@@ -177,7 +209,14 @@ def get_disp(point, point_cloud):
     
     # Get and print distance value in mm at the center of the image
     # We measure the distance camera - object using Euclidean distance
-    err, point_cloud_value = point_cloud.get_value(x, y)
+    try:
+    	err, point_cloud_value = point_cloud.get_value(x, y)
+    except Exception as e:
+    	print("BAD THING HAPPENED")
+    	print(e)
+    	print(x, y)
+    	return (-1, -1, -1)
+    	raise Exception
 
     distance = get_dist(point_cloud_value)
 
@@ -185,10 +224,11 @@ def get_disp(point, point_cloud):
     #point_cloud_np.dot(tr_np)
 
     if not np.isnan(distance) and not np.isinf(distance):
-        print("Can't estimate distance at this position.")
-        print("Your camera is probably too close to the scene, please move it backwards.\n")
+        #print("Can't estimate distance at this position.")
+        #print("Your camera is probably too close to the scene, please move it backwards.\n")
+        pass
 
-    print("Distance to Camera at ({}, {}) (image center): {:1.3} m".format(x, y, distance), end="\r")
+    #print("Distance to Camera at ({}, {}) (image center): {:1.3} m".format(x, y, distance), end="\r")
     sys.stdout.flush()
     return point_cloud_value
 
@@ -207,7 +247,7 @@ def draw_tags(
         tag_family = tag.getFamily()
         tag_id = tag.getId()
         center = tag.getCenter()
-        corners = tag.getCorners()
+        corners = [(int(tag.getCorner(i).x), int(tag.getCorner(i).y)) for i in range(4)]
 
         center = (int(center.x), int(center.y))
         corner_01 = (int(corners[0][0]), int(corners[0][1]))
